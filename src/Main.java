@@ -1,9 +1,15 @@
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Scanner;
+import java.nio.file.StandardCopyOption.*;
+
+import static java.lang.Thread.sleep;
 
 public class Main {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException, InterruptedException {
 
 
         String op, filename, outputfile;
@@ -25,7 +31,15 @@ public class Main {
             System.out.println("Input File error");
             System.exit(1);
         }
-        filename = args[2];
+
+        //checking if there is / at the end of directory's name
+        if(args[2].charAt(args[2].length() - 1) == '/'){
+            args[2] = args[2].substring(0, args[2].length() - 1);
+            filename = args[2];
+        }
+        else{
+            filename = args[2];
+        }
 
         //checking if the file exist. If it does not. Programme exit
         File file = new File(filename);
@@ -70,6 +84,13 @@ public class Main {
             System.out.println("Password error");
             System.exit(1);
         }
+
+        //Checking if the password is only composed of lowercase, uppercase letters and numbers
+        if (!args[6].matches("^[a-zA-Z0-9]+$")){
+            System.out.println("password have to be composed only of lowercase, uppercase letters and numbers");
+            System.exit(1);
+        }
+
         char[] password = args[6].toCharArray();
 
 
@@ -98,16 +119,26 @@ public class Main {
             //if file is a directory
             if(file.isDirectory())
             {
+                File outdir= new File(outputfile);
+                boolean isCreated = outdir.mkdir();
+                String PathNameOut= outdir.getAbsolutePath();
+                System.out.println(PathNameOut);
+
                 File[] dirContent = file.listFiles();
-                assert dirContent != null;
                 for(File f : dirContent)
                 {
                     if(f.isFile() && !f.getName().contains(".enc"))
                     {
                         System.out.println("\nFile: " + f.getName());
-                        CryptoAES.Encrypt(f.getAbsolutePath(), password, outputfile);
+                        CryptoAES.EncryptDirectory(f.getAbsolutePath(), password);
+                        movefile(PathNameOut, f);
+                    }
+                    if(f.isFile() && f.getName().contains(".enc"))
+                    {
+                        movefile2(PathNameOut, f);
                     }
                 }
+
             }
             else //if file is a file
                 CryptoAES.Encrypt(filename, password, outputfile);
@@ -116,6 +147,12 @@ public class Main {
             {
             if(file.isDirectory())
             {
+
+                File outdir= new File(outputfile);
+                boolean isCreated = outdir.mkdir();
+                String PathNameOut= outdir.getAbsolutePath();
+                System.out.println(PathNameOut);
+
                 File[] dirContent = file.listFiles();
                 assert dirContent != null;
                 for (File f : dirContent)
@@ -123,12 +160,46 @@ public class Main {
                     if (f.isFile() && f.getName().contains(".enc"))
                     {
                         System.out.println("\nFile: " + f.getName());
-                        CryptoAES.Decrypt(f.getAbsolutePath(), password, outputfile);
+                        CryptoAES.DecryptDirectory(f.getAbsolutePath(), password);
+                        movefile3(PathNameOut, f);
                     }
                 }
             }
             else
                 CryptoAES.Decrypt(filename, password, outputfile);
         }
+    }
+
+    private static void movefile(String PathOutDir, File f) throws IOException {
+        String PathNameIn= f.getAbsolutePath()+".enc";
+        Path in = Paths.get(PathNameIn);
+
+        PathOutDir = PathOutDir + "/"+f.getName()+".enc";
+        Path out = Paths.get(PathOutDir);
+
+        Files.move(in, out);
+    }
+
+    private static void movefile2(String PathOutDir, File f) throws IOException {
+        String PathNameIn= f.getAbsolutePath();
+        Path in = Paths.get(PathNameIn);
+
+        PathOutDir = PathOutDir + "/"+f.getName();
+        Path out = Paths.get(PathOutDir);
+
+        Files.move(in, out);
+    }
+
+    private static void movefile3(String PathOutDir, File f) throws IOException {
+        String PathNameIn= f.getAbsolutePath();
+        PathNameIn = PathNameIn.replace(".enc", "");
+        Path in = Paths.get(PathNameIn);
+
+
+        PathOutDir = PathOutDir + "/"+f.getName();
+        PathOutDir = PathOutDir.replace(".enc", "");
+        Path out = Paths.get(PathOutDir);
+
+        Files.move(in, out);
     }
 }
