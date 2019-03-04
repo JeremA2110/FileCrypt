@@ -2,11 +2,12 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Scanner;
-import java.nio.file.StandardCopyOption.*;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
-import static java.lang.Thread.sleep;
 
 public class Main {
     public static void main(String[] args) throws IOException, InterruptedException {
@@ -119,26 +120,33 @@ public class Main {
             //if file is a directory
             if(file.isDirectory())
             {
+                //create directory for put file encrypted
                 File outdir= new File(outputfile);
                 boolean isCreated = outdir.mkdir();
                 String PathNameOut= outdir.getAbsolutePath();
                 System.out.println(PathNameOut);
 
+
                 File[] dirContent = file.listFiles();
+                assert dirContent != null;
                 for(File f : dirContent)
                 {
                     if(f.isFile() && !f.getName().contains(".enc"))
                     {
                         System.out.println("\nFile: " + f.getName());
                         CryptoAES.EncryptDirectory(f.getAbsolutePath(), password);
+
                         movefile(PathNameOut, f);
+
                     }
                     if(f.isFile() && f.getName().contains(".enc"))
                     {
                         movefile2(PathNameOut, f);
                     }
                 }
-
+                //creating zip file with all files encrypted in
+                String[] repertok  = CollectFile(outputfile);
+                creationZip(repertok,outputfile);
             }
             else //if file is a file
                 CryptoAES.Encrypt(filename, password, outputfile);
@@ -201,5 +209,60 @@ public class Main {
         Path out = Paths.get(PathOutDir);
 
         Files.move(in, out);
+    }
+
+    private static String[] CollectFile(String filename) {
+
+        ArrayList<String> repert = new ArrayList<String>();
+
+        File file = new File(filename);
+
+        File[] dirContent = file.listFiles();
+        assert dirContent != null;
+        for (File f : dirContent)
+        {
+            if (f.isFile())
+            {
+                String s1 = f.getPath();
+                repert.add(s1); // add the new path of file
+            }
+        }
+
+        String[] repertok = new String[repert.size()];
+        repert.toArray(repertok);
+        return repertok;
+    }
+
+
+    private static void creationZip(String[] repertoire, String outputname)
+    {
+        int BUFFER = 2048;
+        try {
+            BufferedInputStream buffi = null; // entry buffer
+            byte[] data = new byte[BUFFER]; // exit buffer
+            FileOutputStream dest = new FileOutputStream(outputname+".zip"); // final zip file
+            BufferedOutputStream buff = new BufferedOutputStream(dest); // Creation of the exit buffer
+            ZipOutputStream out = new ZipOutputStream(buff); //Write flow Zip, through the buffer
+            out.setMethod(ZipOutputStream.DEFLATED); // Compression mode
+            out.setLevel(9); // compression ratio
+
+            for (String s : repertoire) {
+
+                FileInputStream deb = new FileInputStream(s);
+                buffi = new BufferedInputStream(deb, BUFFER);
+                ZipEntry entry = new ZipEntry(s);
+                out.putNextEntry(entry); // Assign entry to the output stream
+
+                int count;
+                while ((count = buffi.read(data, 0, BUFFER)) != -1) {
+                    out.write(data, 0, count);
+                }
+                buffi.close();
+            }
+            out.close();
+
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
     }
 }
