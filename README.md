@@ -6,14 +6,14 @@ Simple software to encrypt files with AES-256.
 ```
 java -jar FileCrypt.jar -enc -in <input file> -out <output file> -pass yourpassword
 ```
- <br>(also work with directory)
+ <br>also work with a directory as an iput file and will make a directory with all encrypted files in and zip file too.
 
 **Decryption**
 
 ```
 java -jar FileCrypt.jar -dec -in <input file> -out <output file> -pass yourpassword
 ```
- <br>(also work with directory)
+ <br>also work with directory as input file, that will create a new directory (named with output file name) and put all decrypted file in.
 
 
  - How to build
